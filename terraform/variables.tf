@@ -13,5 +13,12 @@ variable "environment" {
 variable "project_name" {
   description = "Project name for resource naming"
   type        = string
-  default     = "checkpoint-ha"
+  default     = "RoyalHomeAssignmentDevOps"
+}
+
+variable "api_token_default" {
+  description = "Default API token value (should be overridden via tfvars in production)"
+  type        = string
+  default     = "default-token-change-me"
+  sensitive   = true
 }

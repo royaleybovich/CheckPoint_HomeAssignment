@@ -8,11 +8,11 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket = "royal-terraform-backend-bucket"
-    key    = "checkpoint-ha/terraform.tfstate"
-    region = "eu-west-1"
-  }
+  #  backend "s3" {
+  #    bucket = "royal-terraform-backend-bucket"
+  #    key    = "checkpoint-ha/terraform.tfstate"
+  #    region = "eu-west-1"
+  #  }
 }
 
 provider "aws" {
