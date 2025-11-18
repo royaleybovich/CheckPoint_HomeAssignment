@@ -1,0 +1,111 @@
+pipeline {
+    agent any
+    
+    environment {
+        AWS_REGION = 'eu-west-1'
+        AWS_ACCOUNT_ID = credentials('aws-account-id')
+        ECR_REPOSITORY = 'royalha-microservice1'
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        DOCKER_IMAGE = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
+        DOCKER_IMAGE_LATEST = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Debug: Check Workspace') {
+            steps {
+                script {
+                    sh '''
+                        echo "=========================================="
+                        echo "Workspace Information"
+                        echo "=========================================="
+                        echo "Current working directory: $(pwd)"
+                        echo "Workspace: ${WORKSPACE}"
+                        echo "Build number: ${BUILD_NUMBER}"
+                        echo "Job name: ${JOB_NAME}"
+                        echo ""
+                        echo "Directory structure:"
+                        ls -la
+                        echo ""
+                        echo "Checking for Jenkinsfile:"
+                        if [ -f "jenkins/Jenkinsfile.microservice1" ]; then
+                            echo "✅ Found: jenkins/Jenkinsfile.microservice1"
+                        else
+                            echo "❌ Not found: jenkins/Jenkinsfile.microservice1"
+                        fi
+                        echo ""
+                        echo "Checking for microservice1 directory:"
+                        if [ -d "microservice1" ]; then
+                            echo "✅ Found: microservice1/"
+                            ls -la microservice1/ | head -10
+                        else
+                            echo "❌ Not found: microservice1/"
+                        fi
+                        echo ""
+                        echo "Git information:"
+                        git rev-parse --show-toplevel 2>/dev/null || echo "Not a git repo"
+                        git branch --show-current 2>/dev/null || echo "No branch info"
+                        echo "=========================================="
+                    '''
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    dir('microservice1') {
+                        sh '''
+                            echo "Building Docker image for Microservice 1..."
+                            docker build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Login to ECR') {
+            steps {
+                script {
+                    sh '''
+                        echo "Logging in to Amazon ECR..."
+                        aws ecr get-login-password --region ${AWS_REGION} | \
+                        docker login --username AWS --password-stdin \
+                        ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                    '''
+                }
+            }
+        }
+        
+        stage('Push to ECR') {
+            steps {
+                script {
+                    sh '''
+                        echo "Pushing Docker image to ECR..."
+                        docker push ${DOCKER_IMAGE}
+                        docker push ${DOCKER_IMAGE_LATEST}
+                        echo "Image pushed successfully: ${DOCKER_IMAGE}"
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "Build successful! Image: ${DOCKER_IMAGE}"
+        }
+        failure {
+            echo "Build failed!"
+        }
+        always {
+            // Clean up
+            sh 'docker image prune -f || true'
+        }
+    }
+}
