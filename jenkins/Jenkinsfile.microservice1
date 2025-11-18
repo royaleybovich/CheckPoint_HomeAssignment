@@ -61,10 +61,10 @@ pipeline {
                 script {
                     dir('microservice1') {
                         // Build image tags directly to avoid any environment variable issues
-                        def imageTag = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${env.BUILD_NUMBER}"
-                        def imageLatest = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest"
+                        def accountId = sh(script: 'echo $AWS_ACCOUNT_ID', returnStdout: true).trim()
+                        def imageTag = "${accountId}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${env.BUILD_NUMBER}"
+                        def imageLatest = "${accountId}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest"
                         echo "Building Docker image for Microservice 1..."
-                        echo "Image tags: ${imageTag} and ${imageLatest}"
                         sh """
                             set -e
                             docker --version
