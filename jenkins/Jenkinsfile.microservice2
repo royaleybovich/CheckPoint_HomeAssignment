@@ -60,23 +60,19 @@ pipeline {
             steps {
                 script {
                     dir('microservice2') {
-                        sh '''
-                            echo "Building Docker image for Microservice 2..."
-                            echo "Docker version:"
+                        def imageTag = env.DOCKER_IMAGE
+                        def imageLatest = env.DOCKER_IMAGE_LATEST
+                        echo "Building Docker image for Microservice 2..."
+                        echo "Image tags: ${imageTag} and ${imageLatest}"
+                        sh """
+                            set -e
                             docker --version
-                            echo "Current directory: $(pwd)"
+                            echo "Current directory: \$(pwd)"
                             echo "Files in directory:"
                             ls -la
-                            echo ""
-                            echo "Building Docker image..."
-                            IMAGE_TAG="${DOCKER_IMAGE}"
-                            IMAGE_LATEST="${DOCKER_IMAGE_LATEST}"
-                            echo "Image tags:"
-                            echo "  - ${IMAGE_TAG}"
-                            echo "  - ${IMAGE_LATEST}"
-                            # Use explicit path and disable buildx
-                            DOCKER_BUILDKIT=0 docker build -t "${IMAGE_TAG}" -t "${IMAGE_LATEST}" .
-                        '''
+                            echo "Building Docker image with tags: ${imageTag} and ${imageLatest}"
+                            DOCKER_BUILDKIT=0 docker build -t ${imageTag} -t ${imageLatest} .
+                        """
                     }
                 }
             }
