@@ -69,8 +69,11 @@ pipeline {
                             ls -la
                             echo ""
                             echo "Building Docker image..."
-                            # Disable buildx if it's causing issues
-                            DOCKER_BUILDKIT=0 docker build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
+                            echo "Image tags:"
+                            echo "  - ${DOCKER_IMAGE}"
+                            echo "  - ${DOCKER_IMAGE_LATEST}"
+                            # Use explicit path and disable buildx
+                            DOCKER_BUILDKIT=0 docker build -t "${DOCKER_IMAGE}" -t "${DOCKER_IMAGE_LATEST}" "$(pwd)"
                         '''
                     }
                 }
