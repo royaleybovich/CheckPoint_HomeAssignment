@@ -56,39 +56,28 @@ pipeline {
             steps {
                 script {
                     dir('microservice1') {
-                        withCredentials([string(credentialsId: 'aws-account-id', variable: 'ACCOUNT_ID')]) {
-                            sh '''
-                                set -e
-                                echo "=== DEBUG: Checking ACCOUNT_ID ==="
-                                echo "ACCOUNT_ID length: ${#ACCOUNT_ID}"
-                                echo "ACCOUNT_ID value: '${ACCOUNT_ID}'"
-                                echo "ACCOUNT_ID first 20 chars: '${ACCOUNT_ID:0:20}'"
-                                
-                                # Clean the account ID - remove any non-numeric characters except leading/trailing whitespace
-                                CLEAN_ACCOUNT_ID=$(echo "${ACCOUNT_ID}" | tr -d '[:space:]' | grep -o '[0-9]*' | head -1)
-                                echo "CLEAN_ACCOUNT_ID: '${CLEAN_ACCOUNT_ID}'"
-                                echo "CLEAN_ACCOUNT_ID length: ${#CLEAN_ACCOUNT_ID}"
-                                
-                                # Use hardcoded account ID for now (371670420772) - CHANGE THIS LATER!
-                                ACCOUNT_ID="371670420772"
-                                
-                                docker --version
-                                echo "Current directory: $(pwd)"
-                                echo "Files in directory:"
-                                ls -la
-                                echo "Building Docker image..."
-                                
-                                # Build image tags
-                                IMAGE_TAG="${ACCOUNT_ID}.dkr.ecr.eu-west-1.amazonaws.com/royalha-microservice1:${BUILD_NUMBER}"
-                                IMAGE_LATEST="${ACCOUNT_ID}.dkr.ecr.eu-west-1.amazonaws.com/royalha-microservice1:latest"
-                                
-                                echo "Final image tags:"
-                                echo "  - ${IMAGE_TAG}"
-                                echo "  - ${IMAGE_LATEST}"
-                                
-                                DOCKER_BUILDKIT=0 docker build -t "${IMAGE_TAG}" -t "${IMAGE_LATEST}" .
-                            '''
-                        }
+                        sh '''
+                            set -e
+                            # Get AWS Account ID dynamically from AWS CLI
+                            ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+                            echo "AWS Account ID: ${ACCOUNT_ID}"
+                            
+                            docker --version
+                            echo "Current directory: $(pwd)"
+                            echo "Files in directory:"
+                            ls -la
+                            echo "Building Docker image..."
+                            
+                            # Build image tags
+                            IMAGE_TAG="${ACCOUNT_ID}.dkr.ecr.eu-west-1.amazonaws.com/royalha-microservice1:${BUILD_NUMBER}"
+                            IMAGE_LATEST="${ACCOUNT_ID}.dkr.ecr.eu-west-1.amazonaws.com/royalha-microservice1:latest"
+                            
+                            echo "Image tags:"
+                            echo "  - ${IMAGE_TAG}"
+                            echo "  - ${IMAGE_LATEST}"
+                            
+                            DOCKER_BUILDKIT=0 docker build -t "${IMAGE_TAG}" -t "${IMAGE_LATEST}" .
+                        '''
                     }
                 }
             }
