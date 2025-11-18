@@ -60,20 +60,22 @@ pipeline {
             steps {
                 script {
                     dir('microservice1') {
-                        // Build image tags directly to avoid any environment variable issues
-                        def accountId = sh(script: 'echo $AWS_ACCOUNT_ID', returnStdout: true).trim()
-                        def imageTag = "${accountId}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${env.BUILD_NUMBER}"
-                        def imageLatest = "${accountId}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest"
-                        echo "Building Docker image for Microservice 1..."
-                        sh """
-                            set -e
-                            docker --version
-                            echo "Current directory: \$(pwd)"
-                            echo "Files in directory:"
-                            ls -la
-                            echo "Building Docker image..."
-                            DOCKER_BUILDKIT=0 docker build -t '${imageTag}' -t '${imageLatest}' .
-                        """
+                        // Get AWS_ACCOUNT_ID from credentials directly to avoid any interpolation issues
+                        withCredentials([string(credentialsId: 'aws-account-id', variable: 'ACCOUNT_ID')]) {
+                            def imageTag = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${env.BUILD_NUMBER}"
+                            def imageLatest = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest"
+                            echo "Building Docker image for Microservice 1..."
+                            echo "Account ID length: ${ACCOUNT_ID.length()}"
+                            sh """
+                                set -e
+                                docker --version
+                                echo "Current directory: \$(pwd)"
+                                echo "Files in directory:"
+                                ls -la
+                                echo "Building Docker image..."
+                                DOCKER_BUILDKIT=0 docker build -t '${imageTag}' -t '${imageLatest}' .
+                            """
+                        }
                     }
                 }
             }
