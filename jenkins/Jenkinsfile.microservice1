@@ -62,7 +62,15 @@ pipeline {
                     dir('microservice1') {
                         sh '''
                             echo "Building Docker image for Microservice 1..."
-                            docker build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
+                            echo "Docker version:"
+                            docker --version
+                            echo "Current directory: $(pwd)"
+                            echo "Files in directory:"
+                            ls -la
+                            echo ""
+                            echo "Building Docker image..."
+                            # Disable buildx if it's causing issues
+                            DOCKER_BUILDKIT=0 docker build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
                         '''
                     }
                 }

@@ -1,0 +1,5 @@
+# Ignore helper scripts and docs (local use only)
+*.md
+!README.md
+*.sh
+docker-compose.yml
