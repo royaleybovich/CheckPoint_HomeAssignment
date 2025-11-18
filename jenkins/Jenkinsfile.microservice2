@@ -30,17 +30,17 @@ pipeline {
                         echo ""
                         echo "Checking for Jenkinsfile:"
                         if [ -f "jenkins/Jenkinsfile.microservice2" ]; then
-                            echo "✅ Found: jenkins/Jenkinsfile.microservice2"
+                            echo "Found: jenkins/Jenkinsfile.microservice2"
                         else
-                            echo "❌ Not found: jenkins/Jenkinsfile.microservice2"
+                            echo "Not found: jenkins/Jenkinsfile.microservice2"
                         fi
                         echo ""
                         echo "Checking for microservice2 directory:"
                         if [ -d "microservice2" ]; then
-                            echo "✅ Found: microservice2/"
+                            echo "Found: microservice2/"
                             ls -la microservice2/ | head -10
                         else
-                            echo "❌ Not found: microservice2/"
+                            echo "Not found: microservice2/"
                         fi
                         echo ""
                         echo "Git information:"
@@ -89,6 +89,12 @@ pipeline {
                         set -e
                         ACCOUNT_ID="371670420772"
                         AWS_REGION="eu-west-1"
+                        
+                        # Set AWS credentials from environment or use default location
+                        export AWS_SHARED_CREDENTIALS_FILE="${AWS_SHARED_CREDENTIALS_FILE:-/var/jenkins_home/.aws/credentials}"
+                        export AWS_CONFIG_FILE="${AWS_CONFIG_FILE:-/var/jenkins_home/.aws/config}"
+                        export HOME="${HOME:-/var/jenkins_home}"
+                        
                         echo "Logging in to Amazon ECR..."
                         aws ecr get-login-password --region ${AWS_REGION} | \
                         docker login --username AWS --password-stdin \
