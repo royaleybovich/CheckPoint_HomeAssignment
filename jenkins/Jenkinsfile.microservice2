@@ -60,8 +60,9 @@ pipeline {
             steps {
                 script {
                     dir('microservice2') {
-                        def imageTag = env.DOCKER_IMAGE
-                        def imageLatest = env.DOCKER_IMAGE_LATEST
+                        // Build image tags directly to avoid any environment variable issues
+                        def imageTag = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${env.BUILD_NUMBER}"
+                        def imageLatest = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest"
                         echo "Building Docker image for Microservice 2..."
                         echo "Image tags: ${imageTag} and ${imageLatest}"
                         sh """
@@ -70,8 +71,8 @@ pipeline {
                             echo "Current directory: \$(pwd)"
                             echo "Files in directory:"
                             ls -la
-                            echo "Building Docker image with tags: ${imageTag} and ${imageLatest}"
-                            DOCKER_BUILDKIT=0 docker build -t ${imageTag} -t ${imageLatest} .
+                            echo "Building Docker image..."
+                            DOCKER_BUILDKIT=0 docker build -t '${imageTag}' -t '${imageLatest}' .
                         """
                     }
                 }
