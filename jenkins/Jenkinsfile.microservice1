@@ -69,11 +69,13 @@ pipeline {
                             ls -la
                             echo ""
                             echo "Building Docker image..."
+                            IMAGE_TAG="${DOCKER_IMAGE}"
+                            IMAGE_LATEST="${DOCKER_IMAGE_LATEST}"
                             echo "Image tags:"
-                            echo "  - ${DOCKER_IMAGE}"
-                            echo "  - ${DOCKER_IMAGE_LATEST}"
+                            echo "  - ${IMAGE_TAG}"
+                            echo "  - ${IMAGE_LATEST}"
                             # Use explicit path and disable buildx
-                            DOCKER_BUILDKIT=0 docker build -t "${DOCKER_IMAGE}" -t "${DOCKER_IMAGE_LATEST}" "$(pwd)"
+                            DOCKER_BUILDKIT=0 docker build -t "${IMAGE_TAG}" -t "${IMAGE_LATEST}" .
                         '''
                     }
                 }
