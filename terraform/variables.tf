@@ -13,7 +13,7 @@ variable "environment" {
 variable "project_name" {
   description = "Project name for resource naming"
   type        = string
-  default     = "RoyalHomeAssignmentDevOps"
+  default     = "RoyalHA"
 }
 
 variable "api_token_default" {

@@ -72,3 +72,34 @@ output "ecs_task_execution_role_arn" {
   description = "ARN of the IAM role for ECS task execution"
   value       = module.iam.ecs_task_execution_role_arn
 }
+
+# ECS Outputs
+output "ecs_cluster_id" {
+  description = "ID of the ECS cluster"
+  value       = module.ecs.ecs_cluster_id
+}
+
+output "ecr_repository_microservice1_url" {
+  description = "URL of the ECR repository for microservice 1"
+  value       = module.ecs.ecr_repository_microservice1_url
+}
+
+output "ecr_repository_microservice2_url" {
+  description = "URL of the ECR repository for microservice 2"
+  value       = module.ecs.ecr_repository_microservice2_url
+}
+
+output "alb_dns_name" {
+  description = "DNS name of the Application Load Balancer"
+  value       = module.ecs.alb_dns_name
+}
+
+output "microservice1_service_name" {
+  description = "Name of the ECS service for microservice 1"
+  value       = module.ecs.microservice1_service_name
+}
+
+output "microservice2_service_name" {
+  description = "Name of the ECS service for microservice 2"
+  value       = module.ecs.microservice2_service_name
+}
