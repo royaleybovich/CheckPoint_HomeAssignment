@@ -199,7 +199,7 @@ pipeline {
                         rm -f /tmp/task-def-${BUILD_NUMBER}.json
                         
                         # Check if registration failed
-                        if echo "$NEW_TASK_DEF_ARN" | grep -q "Error\|error"; then
+                        if echo "$NEW_TASK_DEF_ARN" | grep -qi "error"; then
                             echo "Error registering task definition:"
                             echo "$NEW_TASK_DEF_ARN"
                             exit 1
