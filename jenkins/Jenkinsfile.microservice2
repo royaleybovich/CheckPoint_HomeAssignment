@@ -68,9 +68,10 @@ pipeline {
                                   apt-get update -qq && apt-get install -y -qq python3-venv > /dev/null 2>&1 || true
                               fi
                               
-                              # Install Python dependencies if needed
-                              if [ ! -d "venv" ]; then
+                              # Remove old/broken venv and create fresh one
+                              if [ ! -f "venv/bin/activate" ]; then
                                   echo "Creating virtual environment..."
+                                  rm -rf venv 2>/dev/null || true
                                   python3 -m venv venv || python3 -m ensurepip --upgrade || true
                                   python3 -m venv venv
                               fi
@@ -92,7 +93,7 @@ pipeline {
               }
               post {
                   always {
-                      junit 'microservice2/test-results.xml'
+                      junit testResults: 'microservice2/test-results.xml', allowEmptyResults: true, keepLongStdio: true
                   }
               }
           }
