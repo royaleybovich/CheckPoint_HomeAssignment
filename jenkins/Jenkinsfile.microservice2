@@ -77,8 +77,9 @@ pipeline {
                               
                               echo "Activating virtual environment and installing dependencies..."
                               . venv/bin/activate
-                              pip install --upgrade pip -q
-                              pip install -r requirements.txt -q
+                              pip install --upgrade pip setuptools wheel -q
+                              # Prefer binary wheels to avoid compilation
+                              pip install --prefer-binary -r requirements.txt -q
                               
                               echo ""
                               echo "Running tests with pytest..."
