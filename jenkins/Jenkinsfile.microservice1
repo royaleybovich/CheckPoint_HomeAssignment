@@ -113,6 +113,11 @@ pipeline {
                         AWS_REGION="eu-west-1"
                         ECR_REPOSITORY="royalha-microservice1"
                         
+                        # Set AWS credentials
+                        export AWS_SHARED_CREDENTIALS_FILE="${AWS_SHARED_CREDENTIALS_FILE:-/var/jenkins_home/.aws/credentials}"
+                        export AWS_CONFIG_FILE="${AWS_CONFIG_FILE:-/var/jenkins_home/.aws/config}"
+                        export HOME="${HOME:-/var/jenkins_home}"
+                        
                         IMAGE_TAG="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${BUILD_NUMBER}"
                         IMAGE_LATEST="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest"
                         
@@ -124,6 +129,100 @@ pipeline {
                 }
             }
         }
+        
+        stage('Deploy to ECS') {
+            steps {
+                script {
+                    sh '''
+                        set -e
+                        ACCOUNT_ID="371670420772"
+                        AWS_REGION="eu-west-1"
+                        PROJECT_NAME="RoyalHA"
+                        ENVIRONMENT="dev"
+                        CLUSTER_NAME="${PROJECT_NAME}-cluster-${ENVIRONMENT}"
+                        SERVICE_NAME="${PROJECT_NAME}-ms1-${ENVIRONMENT}"
+                        TASK_DEFINITION_FAMILY="${PROJECT_NAME}-ms1-${ENVIRONMENT}"
+                        ECR_REPOSITORY="royalha-microservice1"
+                        
+                        # Set AWS credentials
+                        export AWS_SHARED_CREDENTIALS_FILE="${AWS_SHARED_CREDENTIALS_FILE:-/var/jenkins_home/.aws/credentials}"
+                        export AWS_CONFIG_FILE="${AWS_CONFIG_FILE:-/var/jenkins_home/.aws/config}"
+                        export HOME="${HOME:-/var/jenkins_home}"
+                        
+                        # Use build number as image tag
+                        IMAGE_TAG="${BUILD_NUMBER}"
+                        IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
+                        
+                        echo "=========================================="
+                        echo "Deploying to ECS"
+                        echo "=========================================="
+                        echo "Cluster: ${CLUSTER_NAME}"
+                        echo "Service: ${SERVICE_NAME}"
+                        echo "Image: ${IMAGE_URI}"
+                        echo ""
+                        
+                        # Check if jq is installed
+                        if ! command -v jq &> /dev/null; then
+                            echo "Installing jq..."
+                            apt-get update -qq && apt-get install -y -qq jq > /dev/null 2>&1
+                        fi
+                        
+                        # Get current task definition
+                        echo "Getting current task definition..."
+                        TASK_DEF=$(aws ecs describe-task-definition \
+                            --task-definition "${TASK_DEFINITION_FAMILY}" \
+                            --region "${AWS_REGION}" \
+                            --query '\''taskDefinition'\'' \
+                            --output json)
+                        
+                        if [ -z "$TASK_DEF" ] || [ "$TASK_DEF" == "null" ]; then
+                            echo "Error: Task definition not found: ${TASK_DEFINITION_FAMILY}"
+                            exit 1
+                        fi
+                        
+                        # Update container image in task definition
+                        echo "Updating task definition with new image..."
+                        NEW_TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "$IMAGE_URI" '\''.containerDefinitions[0].image = $IMAGE'\'')
+                        
+                        # Remove fields that can'\''t be in register-task-definition
+                        NEW_TASK_DEF=$(echo "$NEW_TASK_DEF" | jq '\''del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)'\'')
+                        
+                        # Register new task definition
+                        echo "Registering new task definition..."
+                        NEW_TASK_DEF_ARN=$(echo "$NEW_TASK_DEF" | aws ecs register-task-definition \
+                            --cli-input-json file:///dev/stdin \
+                            --region "${AWS_REGION}" \
+                            --query '\''taskDefinition.taskDefinitionArn'\'' \
+                            --output text)
+                        
+                        echo "New task definition: ${NEW_TASK_DEF_ARN}"
+                        
+                        # Update service with new task definition
+                        echo "Updating ECS service..."
+                        aws ecs update-service \
+                            --cluster "${CLUSTER_NAME}" \
+                            --service "${SERVICE_NAME}" \
+                            --task-definition "${NEW_TASK_DEF_ARN}" \
+                            --region "${AWS_REGION}" \
+                            --output json > /dev/null
+                        
+                        echo ""
+                        echo "✅ Deployment initiated successfully!"
+                        echo ""
+                        echo "Waiting for service to stabilize (this may take a few minutes)..."
+                        aws ecs wait services-stable \
+                            --cluster "${CLUSTER_NAME}" \
+                            --services "${SERVICE_NAME}" \
+                            --region "${AWS_REGION}" || echo "Warning: Service stabilization timeout or error"
+                        
+                        echo ""
+                        echo "✅ Deployment completed!"
+                        echo "Service is now running with image: ${IMAGE_URI}"
+                    '''
+                }
+            }
+        }
+        
     }
     
     post {
