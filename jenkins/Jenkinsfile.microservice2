@@ -62,10 +62,11 @@ pipeline {
                               echo "Running Unit Tests"
                               echo "=========================================="
                               
-                              # Try to install python3-venv (works even if already installed)
-                              echo "Ensuring python3-venv is available..."
+                              # Install required packages for Python dependencies
+                              echo "Installing required packages..."
+                              export DEBIAN_FRONTEND=noninteractive
                               apt-get update -qq 2>&1 | grep -v "WARNING: apt does not have a stable CLI interface" || true
-                              apt-get install -y -qq python3-venv 2>&1 | grep -v "WARNING: apt does not have a stable CLI interface" || true
+                              apt-get install -y -qq python3-venv build-essential python3-dev 2>&1 | grep -v "WARNING: apt does not have a stable CLI interface" || true
                               
                               # Remove old/broken venv and create fresh one
                               if [ ! -f "venv/bin/activate" ]; then
