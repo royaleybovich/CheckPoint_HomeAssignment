@@ -173,9 +173,10 @@ pipeline {
                             --task-definition "${TASK_DEFINITION_FAMILY}" \
                             --region "${AWS_REGION}" \
                             --query '\''taskDefinition'\'' \
-                            --output json)
+                            --output json 2>&1)
                         
-                        if [ -z "$TASK_DEF" ] || [ "$TASK_DEF" == "null" ]; then
+                        # Check if task definition exists
+                        if echo "$TASK_DEF" | grep -q "ResourceNotFoundException"; then
                             echo "Error: Task definition not found: ${TASK_DEFINITION_FAMILY}"
                             exit 1
                         fi
@@ -187,13 +188,22 @@ pipeline {
                         # Remove fields that can'\''t be in register-task-definition
                         NEW_TASK_DEF=$(echo "$NEW_TASK_DEF" | jq '\''del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)'\'')
                         
-                        # Register new task definition
+                        # Register new task definition - write to temp file to avoid stdin issues
                         echo "Registering new task definition..."
-                        NEW_TASK_DEF_ARN=$(echo "$NEW_TASK_DEF" | aws ecs register-task-definition \
-                            --cli-input-json file:///dev/stdin \
+                        echo "$NEW_TASK_DEF" > /tmp/task-def-${BUILD_NUMBER}.json
+                        NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+                            --cli-input-json file:///tmp/task-def-${BUILD_NUMBER}.json \
                             --region "${AWS_REGION}" \
                             --query '\''taskDefinition.taskDefinitionArn'\'' \
-                            --output text)
+                            --output text 2>&1)
+                        rm -f /tmp/task-def-${BUILD_NUMBER}.json
+                        
+                        # Check if registration failed
+                        if echo "$NEW_TASK_DEF_ARN" | grep -q "Error\|error"; then
+                            echo "Error registering task definition:"
+                            echo "$NEW_TASK_DEF_ARN"
+                            exit 1
+                        fi
                         
                         echo "New task definition: ${NEW_TASK_DEF_ARN}"
                         
@@ -216,7 +226,7 @@ pipeline {
                             --region "${AWS_REGION}" || echo "Warning: Service stabilization timeout or error"
                         
                         echo ""
-                        echo "✅ Deployment completed!"
+                        echo "Deployment completed!"
                         echo "Service is now running with image: ${IMAGE_URI}"
                     '''
                 }
