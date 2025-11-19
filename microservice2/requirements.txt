@@ -1,9 +1,8 @@
 # Microservice 2 - SQS Consumer Requirements
 boto3==1.29.7
-
 python-dotenv==1.0.0
-
 python-json-logger==2.0.7
-
-python-dateutil==2.8.2
-
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+moto==4.2.14

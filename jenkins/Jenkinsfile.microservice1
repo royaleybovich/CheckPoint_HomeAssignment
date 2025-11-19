@@ -13,44 +13,82 @@ pipeline {
             }
         }
         
-        stage('Debug: Check Workspace') {
-            steps {
-                script {
-                    sh '''
-                        echo "=========================================="
-                        echo "Workspace Information"
-                        echo "=========================================="
-                        echo "Current working directory: $(pwd)"
-                        echo "Workspace: ${WORKSPACE}"
-                        echo "Build number: ${BUILD_NUMBER}"
-                        echo "Job name: ${JOB_NAME}"
-                        echo ""
-                        echo "Directory structure:"
-                        ls -la
-                        echo ""
-                        echo "Checking for Jenkinsfile:"
-                        if [ -f "jenkins/Jenkinsfile.microservice1" ]; then
-                            echo "Found: jenkins/Jenkinsfile.microservice1"
-                        else
-                            echo "Not found: jenkins/Jenkinsfile.microservice1"
-                        fi
-                        echo ""
-                        echo "Checking for microservice1 directory:"
-                        if [ -d "microservice1" ]; then
-                            echo "Found: microservice1/"
-                            ls -la microservice1/ | head -10
-                        else
-                            echo "Not found: microservice1/"
-                        fi
-                        echo ""
-                        echo "Git information:"
-                        git rev-parse --show-toplevel 2>/dev/null || echo "Not a git repo"
-                        git branch --show-current 2>/dev/null || echo "No branch info"
-                        echo "=========================================="
-                    '''
-                }
-            }
-        }
+          stage('Debug: Check Workspace') {
+              steps {
+                  script {
+                      sh '''
+                          echo "=========================================="
+                          echo "Workspace Information"
+                          echo "=========================================="
+                          echo "Current working directory: $(pwd)"
+                          echo "Workspace: ${WORKSPACE}"
+                          echo "Build number: ${BUILD_NUMBER}"
+                          echo "Job name: ${JOB_NAME}"
+                          echo ""
+                          echo "Directory structure:"
+                          ls -la
+                          echo ""
+                          echo "Checking for Jenkinsfile:"
+                          if [ -f "jenkins/Jenkinsfile.microservice1" ]; then
+                              echo "Found: jenkins/Jenkinsfile.microservice1"
+                          else
+                              echo "Not found: jenkins/Jenkinsfile.microservice1"
+                          fi
+                          echo ""
+                          echo "Checking for microservice1 directory:"
+                          if [ -d "microservice1" ]; then
+                              echo "Found: microservice1/"
+                              ls -la microservice1/ | head -10
+                          else
+                              echo "Not found: microservice1/"
+                          fi
+                          echo ""
+                          echo "Git information:"
+                          git rev-parse --show-toplevel 2>/dev/null || echo "Not a git repo"
+                          git branch --show-current 2>/dev/null || echo "No branch info"
+                          echo "=========================================="
+                      '''
+                  }
+              }
+          }
+
+          stage('Run Tests') {
+              steps {
+                  script {
+                      dir('microservice1') {
+                          sh '''
+                              set -e
+                              echo "=========================================="
+                              echo "Running Unit Tests"
+                              echo "=========================================="
+                              
+                              # Install Python dependencies if needed
+                              if [ ! -d "venv" ]; then
+                                  echo "Creating virtual environment..."
+                                  python3 -m venv venv
+                              fi
+                              
+                              echo "Activating virtual environment and installing dependencies..."
+                              source venv/bin/activate
+                              pip install --upgrade pip -q
+                              pip install -r requirements.txt -q
+                              
+                              echo ""
+                              echo "Running tests with pytest..."
+                              pytest tests/ -v --tb=short --junit-xml=test-results.xml || true
+                              
+                              echo ""
+                              echo "Test execution completed!"
+                          '''
+                      }
+                  }
+              }
+              post {
+                  always {
+                      junit 'microservice1/test-results.xml'
+                  }
+              }
+          }
         
         stage('Build Docker Image') {
             steps {
@@ -217,7 +255,7 @@ pipeline {
                             --output json > /dev/null
                         
                         echo ""
-                        echo "✅ Deployment initiated successfully!"
+                        echo "Deployment initiated successfully!"
                         echo ""
                         echo "Waiting for service to stabilize (this may take a few minutes)..."
                         aws ecs wait services-stable \
