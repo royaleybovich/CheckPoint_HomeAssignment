@@ -27,6 +27,10 @@ from app.main import (
 )
 from app import main as app_main
 
+# Store reference to original os.getenv before patching
+import sys
+_original_os_getenv = sys.modules['os'].getenv
+
 class TestConfiguration:
     """Test configuration validation"""
     
@@ -42,14 +46,24 @@ class TestConfiguration:
     def test_validate_configuration_missing_sqs(self):
         """Test configuration validation with missing SQS_QUEUE_URL"""
         # Patch os.getenv directly in the app.main module
-        with patch.object(app_main.os, 'getenv', side_effect=lambda key, default=None: "" if key == "SQS_QUEUE_URL" else os.getenv(key, default)):
+        def mock_getenv(key, default=None):
+            if key == "SQS_QUEUE_URL":
+                return ""
+            return _original_os_getenv(key, default)
+        
+        with patch.object(app_main.os, 'getenv', side_effect=mock_getenv):
             with pytest.raises(ValueError, match="SQS_QUEUE_URL"):
                 validate_configuration()
     
     def test_validate_configuration_missing_s3(self):
         """Test configuration validation with missing S3_BUCKET_NAME"""
         # Patch os.getenv directly in the app.main module
-        with patch.object(app_main.os, 'getenv', side_effect=lambda key, default=None: "" if key == "S3_BUCKET_NAME" else os.getenv(key, default)):
+        def mock_getenv(key, default=None):
+            if key == "S3_BUCKET_NAME":
+                return ""
+            return _original_os_getenv(key, default)
+        
+        with patch.object(app_main.os, 'getenv', side_effect=mock_getenv):
             with pytest.raises(ValueError, match="S3_BUCKET_NAME"):
                 validate_configuration()
 
