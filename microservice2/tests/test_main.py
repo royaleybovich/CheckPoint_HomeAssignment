@@ -25,7 +25,7 @@ from app.main import (
     delete_message,
     process_message
 )
-
+from app import main as app_main
 
 class TestConfiguration:
     """Test configuration validation"""
@@ -41,13 +41,15 @@ class TestConfiguration:
     
     def test_validate_configuration_missing_sqs(self):
         """Test configuration validation with missing SQS_QUEUE_URL"""
-        with patch.dict(os.environ, {"SQS_QUEUE_URL": ""}):
+        # Patch os.getenv directly in the app.main module
+        with patch.object(app_main.os, 'getenv', side_effect=lambda key, default=None: "" if key == "SQS_QUEUE_URL" else os.getenv(key, default)):
             with pytest.raises(ValueError, match="SQS_QUEUE_URL"):
                 validate_configuration()
     
     def test_validate_configuration_missing_s3(self):
         """Test configuration validation with missing S3_BUCKET_NAME"""
-        with patch.dict(os.environ, {"S3_BUCKET_NAME": ""}):
+        # Patch os.getenv directly in the app.main module
+        with patch.object(app_main.os, 'getenv', side_effect=lambda key, default=None: "" if key == "S3_BUCKET_NAME" else os.getenv(key, default)):
             with pytest.raises(ValueError, match="S3_BUCKET_NAME"):
                 validate_configuration()
 

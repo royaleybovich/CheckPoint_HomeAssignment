@@ -103,3 +103,8 @@ output "microservice2_service_name" {
   description = "Name of the ECS service for microservice 2"
   value       = module.ecs.microservice2_service_name
 }
+
+output "cloudwatch_dashboard_url" {
+  description = "URL to the CloudWatch dashboard"
+  value       = module.ecs.cloudwatch_dashboard_url
+}

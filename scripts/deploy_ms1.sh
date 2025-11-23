@@ -65,7 +65,7 @@ aws ecs update-service \
     --output json > /dev/null
 
 echo ""
-echo "✅ Deployment initiated successfully!"
+echo "Deployment initiated successfully!"
 echo ""
 echo "Waiting for service to stabilize..."
 aws ecs wait services-stable \
@@ -74,6 +74,6 @@ aws ecs wait services-stable \
     --region "${AWS_REGION}"
 
 echo ""
-echo "✅ Deployment completed successfully!"
+echo "Deployment completed successfully!"
 echo "Service is now running with image: ${IMAGE_URI}"
 

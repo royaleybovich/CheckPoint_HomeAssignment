@@ -48,9 +48,14 @@ def get_s3_client():
 
 def validate_configuration():
     """Validate that required environment variables are set"""
-    if not SQS_QUEUE_URL:
+    # Check environment variables directly to support testing (reads fresh from os.environ)
+    sqs_queue_url = os.getenv("SQS_QUEUE_URL")
+    s3_bucket_name = os.getenv("S3_BUCKET_NAME")
+    
+    # Check for None, empty string, or whitespace-only strings
+    if not sqs_queue_url or not str(sqs_queue_url).strip():
         raise ValueError("SQS_QUEUE_URL environment variable is not set")
-    if not S3_BUCKET_NAME:
+    if not s3_bucket_name or not str(s3_bucket_name).strip():
         raise ValueError("S3_BUCKET_NAME environment variable is not set")
     logger.info("Configuration validated successfully")
 

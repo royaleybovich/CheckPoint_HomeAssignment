@@ -42,3 +42,8 @@ output "microservice2_service_name" {
   description = "Name of the ECS service for microservice 2"
   value       = aws_ecs_service.microservice2.name
 }
+
+output "cloudwatch_dashboard_url" {
+  description = "URL to the CloudWatch dashboard"
+  value       = "https://${var.aws_region}.console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.main.dashboard_name}"
+}
